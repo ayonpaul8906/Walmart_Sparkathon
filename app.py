@@ -1,5 +1,5 @@
 import streamlit as st
-from greenshelf import get_unmarked_high_risk, mark_down_sku, greenshelf_chat
+from utils.greenshelf import get_unmarked_high_risk, mark_down_sku, greenshelf_chat
 import google.generativeai as genai
 from PIL import Image
 import pandas as pd
@@ -105,6 +105,40 @@ with tab2:
 
     # Load latest data
     today_summary = pd.read_csv("active_summary.csv")
+
+    # --- Load and show 14-day spoilage metrics ---
+    df_metrics = pd.read_csv("data/metrics_data.csv")
+    st.markdown("#### 📈 Spoilage % Trend (Last 14 Days)")
+    st.line_chart(
+        df_metrics.set_index("Date")[["Spoilage_%_Before", "Spoilage_%_After"]],
+        use_container_width=True
+    )
+
+    st.markdown("#### ✅ Daily Spoilage: Before vs After AI")
+    st.bar_chart(
+        df_metrics.set_index("Date")[["Spoiled_Batches_Before", "Spoiled_Batches_After"]],
+        use_container_width=True
+    )
+
+    st.markdown("#### 🟢 Cumulative Food Saved Since Launch")
+    st.area_chart(
+        df_metrics.set_index("Date")[["Cumulative_Food_Saved"]],
+        use_container_width=True
+    )
+
+    st.markdown(f"**Total Food Saved:** `{df_metrics['Cumulative_Food_Saved'].iloc[-1]}` batches")
+
+    st.markdown("### 🧠 Gemini Weekly Summary")
+    prompt = (
+        "You are a sustainability analyst for Walmart.\n"
+        f"Summarize this 14-day spoilage and savings data:\n{df_metrics.to_csv(index=False)}\n\n"
+        "Highlight trends, improvements, and give 2 recommendations to reduce spoilage further."
+    )
+    summary = genai.GenerativeModel("gemini-2.0-flash").generate_content(prompt)
+    st.success(summary.text)
+
+    st.divider()
+
 
     if not today_summary.empty:
         st.markdown("#### ⚙️ Customize Sustainability Factors")

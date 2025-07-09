@@ -157,15 +157,35 @@ with tab3:
         if st.button("🔎 Analyze Spoilage"):
             with st.spinner("Analyzing with Vision..."):
                 model = genai.GenerativeModel("gemini-2.0-flash")
-                response = model.generate_content(["Is this food item spoiled or fresh? Give a short reason.", img])
+                prompt = (
+                    "You're a food quality inspector AI helping reduce food waste at Walmart.\n"
+                    "Analyze the given image of a food item and do the following:\n\n"
+                    "1. Tell whether the food item appears **fresh or spoiled** (use only these terms).\n"
+                    "2. Give a **mid-length reason** (e.g., color, texture, mold, dryness, bruising, etc).\n"
+                    "3. Estimate a **spoilage risk percentage (0–100%)** based on the visible condition.\n\n"
+                    "Reply in this format:\n"
+
+                    "**Status:** Fresh or Spoiled\n"
+                    "**Reason:** Short visual cue\n"
+                    "**Spoilage Probability:** XX%\n\n"
+                    
+                    "Be accurate and avoid long responses."
+                )
+                response = model.generate_content([prompt, img])
                 st.success("✅ Analysis Complete")
                 st.markdown(f"**🧠 AI Result:** {response.text}")
+
+                # Split the response into lines
+                lines = response.text.strip().splitlines()
+                for line in lines:
+                    st.markdown(f"🧠 {line}")
+
 
     st.divider()
 
     st.markdown("### ⚙️ TinyML Edge Simulation (Coming Soon)")
     st.markdown("""
-    📱 In the future, GreenShelf AI will simulate on-device spoilage detection using **TinyML**.  
+    Our future scope: GreenShelf AI will simulate on-device spoilage detection using **TinyML** for most accurate results.  
     This means spoilage alerts could run **offline on edge devices** like Raspberry Pi, smart fridges, or shelf sensors.
 
     🧠 Powered by: `TFLite`, `Edge Impulse`, `Arduino Nano BLE Sense` (planned).
